@@ -83,24 +83,14 @@ kubectl apply -f https://github.com/knative/eventing/releases/download/knative-v
 kubectl get pods -n knative-eventing
 ```
 
-- Install the Kafka controller
+- Install InMemory Channel
 ```
-kubectl apply -f https://github.com/knative-sandbox/eventing-kafka-broker/releases/download/knative-v1.11.6/eventing-kafka-controller.yaml
-```
-
-- Install the KafkaChannel data plane
-```
-kubectl apply -f https://github.com/knative-sandbox/eventing-kafka-broker/releases/download/knative-v1.11.6/eventing-kafka-channel.yaml
+kubectl apply -f https://github.com/knative/eventing/releases/download/knative-v1.11.5/in-memory-channel.yaml
 ```
 
-- Install the Kafka Broker data plane
+- Install mt channel broker
 ```
-kubectl apply -f https://github.com/knative-sandbox/eventing-kafka-broker/releases/download/knative-v1.11.6/eventing-kafka-broker.yaml
-```
-
-- Install the Kafka Sink data plane
-```
-kubectl apply -f https://github.com/knative-sandbox/eventing-kafka-broker/releases/download/knative-v1.11.6/eventing-kafka-sink.yaml
+kubectl apply -f https://github.com/knative/eventing/releases/download/knative-v1.11.5/mt-channel-broker.yaml
 ```
 
 ### 5. Try with Hello World Service
@@ -145,23 +135,24 @@ kn service delete 'hello'
 kn service create cloudevents-player --image quay.io/ruben/cloudevents-player:latest
 ```
 
-- Create Kafka broker
+- Create MTC broker
 ```
-kn broker create kafka-broker
+kn broker create mtc-broker
 ```
 
 - Sink binding the service and the broker
 ```
-kn source binding create ce-player-binding --subject "Service:serving.knative.dev/v1:cloudevents-player" --sink broker:kafka-broker
+kn source binding create ce-player-binding --subject "Service:serving.knative.dev/v1:cloudevents-player" --sink broker:mtc-broker
 ```
-
-- Send event from Web UI on http://cloudevents-player.default.example.com
 
 - Create trigger
 ```
-kn trigger create cloudevents-trigger --sink cloudevents-player  --broker kafka-broker
+kn trigger create cloudevents-trigger --sink cloudevents-player  --broker mtc-broker
 ```
 
+- Send event from http://cloudevents-player.default.example.com we will see the player display the sending message and also the receiving message.
+
+### 7. Clean up
 - Delete trigger
 ```
 kn trigger delete cloudevents-trigger
@@ -172,9 +163,9 @@ kn trigger delete cloudevents-trigger
 kn source binding delete ce-player-binding
 ```
 
-- Delete Kafka broker
+- Delete MTC broker
 ```
-kn broker delete kafka-broker
+kn broker delete mtc-broker
 ```
 
 - Delete service
@@ -183,6 +174,7 @@ kn service delete 'cloudevents-player'
 ```
 
 ### 7. Some other commands
+- Knative
 ```
 kubectl get kservice
 kubectl get route
@@ -192,7 +184,22 @@ kubectl get deploy
 kubectl -n knative-serving get cm config-autoscaler
 kubectl -n knative-serving describe cm config-autoscaler
 ```
+- Broker
+```
+kubectl describe broker.eventing.knative.dev/mtc-broker
+kubectl describe SinkBinding
+kubectl describe configmap config-br-default-channel -n knative-eventing
+kubectl describe configmap config-br-defaults -n knative-eventing
+kubectl get configmap config-br-default-channel -n knative-eventing -o yaml
+kubectl get configmap config-br-defaults -n knative-eventing -o yaml
+```
+
+- Trigger
+```
+kubectl describe trigger.eventing.knative.dev/cloudevents-trigger
+```
 
 ### References
 - Greate video: https://www.youtube.com/watch?v=PSnVGk73CjQ&list=PLBvjNj5-9WtHD7rbY-0K5bx2nzbNhGGVm&index=3
 - Knative website: https://knative.dev/docs/
+- Step-by-step tutorial: https://opensource.com/article/21/2/knative-eventing
